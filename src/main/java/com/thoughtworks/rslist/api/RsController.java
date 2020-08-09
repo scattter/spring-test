@@ -37,7 +37,7 @@ public class RsController {
   public ResponseEntity<List<RsEvent>> getRsEventListBetween(
       @RequestParam(required = false) Integer start, @RequestParam(required = false) Integer end) {
     List<RsEvent> rsEvents =
-        rsEventRepository.findAll().stream()
+        rsEventRepository.findAllByEventRank().stream()
             .map(
                 item ->
                     RsEvent.builder()
