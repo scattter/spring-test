@@ -14,6 +14,7 @@ import com.thoughtworks.rslist.repository.VoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -54,36 +55,53 @@ public class RsService {
         rsEventRepository.save(rsEvent);
     }
 
-    public void buy(Trade trade, int id) {
-        Optional<RsEventDto> rsEventDto = rsEventRepository.findById(id);
-        if (rsEventDto.isPresent()) {
+    public void buy(Trade trade, int rsEventId) {
+        Optional<RsEventDto> rsEventDto = rsEventRepository.findById(rsEventId);
+        if (!rsEventDto.isPresent()) {
             throw new RequestNotValidException("当前无此热搜");
         }
-
-        Optional<TradeDto> tradeDto = tradeRepository.findById(id);
-        if (!tradeDto.isPresent()) {
+        System.out.println("-------1----------");
+        // 看是否之前有过交易
+        List<TradeDto> tradeDto = tradeRepository.findByRank(trade.getRank());
+        //无交易 超过0元即可购买
+        if (tradeDto.size() == 0) {
+            System.out.println("-------2---------");
             if (trade.getAmount() > 0) {
                 tradeRepository.save(TradeDto.builder()
                         .amount(trade.getAmount())
                         .rank(trade.getRank())
-                        .tradeEvent(id)
+                        .tradeEvent(rsEventId)
                         .build());
                 rsEventDto.get().setRank(trade.getRank());
                 rsEventRepository.save(rsEventDto.get());
+                System.out.println("-------2---------");
             } else {
                 throw new RequestNotValidException("您的购买金额无效");
             }
         } else {
-            int leastAmount = tradeDto.get().getAmount();
+            // 找到购买该排名的最大金额  以及 当前改排名的热搜事件ID
+            int leastAmount = tradeDto.get(0).getAmount();
+            int tradeEventId = tradeDto.get(0).getTradeEvent();
+            for (int i = 1; i < tradeDto.size(); i++) {
+                if (tradeDto.get(i).getAmount()>leastAmount) {
+                    leastAmount = tradeDto.get(i).getAmount();
+                    tradeEventId = tradeDto.get(i).getTradeEvent();
+                }
+            }
+            System.out.println("===========");
+            System.out.println(trade.getAmount() + leastAmount);
+            // 如果购买金额大于leastAmount 删除热搜事件中的此事件 更新热搜事件  保存交易记录
             if (trade.getAmount() <= leastAmount) {
                 throw new RequestNotValidException("您的购买金额无效");
             } else {
+                System.out.println("------------------");
+                rsEventRepository.deleteById(tradeEventId);
                 rsEventDto.get().setRank(trade.getRank());
                 rsEventRepository.save(rsEventDto.get());
                 tradeRepository.save(TradeDto.builder()
                         .amount(trade.getAmount())
                         .rank(trade.getRank())
-                        .tradeEvent(id)
+                        .tradeEvent(rsEventId)
                         .build());
             }
         }

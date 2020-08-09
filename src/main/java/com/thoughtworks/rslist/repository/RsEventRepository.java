@@ -15,5 +15,9 @@ public interface RsEventRepository extends CrudRepository<RsEventDto, Integer> {
 
     @Transactional
     @Query(value = "select * from rs_event order by rank",nativeQuery = true)
-    List<RsEventDto> findAllByEventRank();
+    List<RsEventDto> findAllEventByRank();
+
+//    @Transactional
+//    @Query(value = "select * from rs_event where rs_event.id = ?1",nativeQuery = true)
+//    List<RsEventDto> findByEventId(int rank);
 }
