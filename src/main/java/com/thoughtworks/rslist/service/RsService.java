@@ -60,12 +60,10 @@ public class RsService {
         if (!rsEventDto.isPresent()) {
             throw new RequestNotValidException("当前无此热搜");
         }
-        System.out.println("-------1----------");
         // 看是否之前有过交易
         List<TradeDto> tradeDto = tradeRepository.findByRank(trade.getRank());
         //无交易 超过0元即可购买
         if (tradeDto.size() == 0) {
-            System.out.println("-------2---------");
             if (trade.getAmount() > 0) {
                 tradeRepository.save(TradeDto.builder()
                         .amount(trade.getAmount())
@@ -74,7 +72,6 @@ public class RsService {
                         .build());
                 rsEventDto.get().setRank(trade.getRank());
                 rsEventRepository.save(rsEventDto.get());
-                System.out.println("-------2---------");
             } else {
                 throw new RequestNotValidException("您的购买金额无效");
             }
@@ -88,13 +85,11 @@ public class RsService {
                     tradeEventId = tradeDto.get(i).getTradeEvent();
                 }
             }
-            System.out.println("===========");
             System.out.println(trade.getAmount() + leastAmount);
             // 如果购买金额大于leastAmount 删除热搜事件中的此事件 更新热搜事件  保存交易记录
             if (trade.getAmount() <= leastAmount) {
                 throw new RequestNotValidException("您的购买金额无效");
             } else {
-                System.out.println("------------------");
                 rsEventRepository.deleteById(tradeEventId);
                 rsEventDto.get().setRank(trade.getRank());
                 rsEventRepository.save(rsEventDto.get());
